@@ -144,20 +144,30 @@ export class NgsildDataSource extends DataSourceApi<NgsildQuery, NgsildSourceOpt
               fields: [time, field]
             }));
           }
-        } else if (result[attribute].value !== undefined) {
-          let value: any = result[attribute].value;
-          if (typeof value === "object" && "@value" in value)
+        } else if (result[attribute] !== undefined) {
+          const attrObj = result[attribute];
+          let value: any = attrObj !== null && attrObj.value !== undefined ? attrObj.value : attrObj;
+          if (typeof value === "object" && value !== null && "@value" in value)
             {value = value["@value"];}
           const type: FieldType = isNumber(value) ? FieldType.number : typeof value === "string" ? FieldType.string:
               value === false || value === true ? FieldType.boolean : FieldType.other; 
+          
+          let t: number;
+          const obsAt = attrObj !== null ? (attrObj.observedAt || attrObj.modifiedAt || attrObj.createdAt) : null;
+          if (obsAt && typeof obsAt === "string") {
+            t = new Date(obsAt).getTime();
+          } else if (attrObj !== null && isFinite(attrObj.observedAt)) {
+            t = attrObj.observedAt;
+          } else {
+            t = isFinite(options?.from!) && isFinite(options?.to!) ? (options?.from! + options?.to!)/2 :
+              isFinite(options?.from!) ? options?.from! : isFinite(options?.to!) ? options!.to! : Date.now();
+          }
+
           const field = { 
             name:  attrName, 
             values: [value], 
-            type: FieldType.number 
+            type: type 
           };
-          const t: number = isFinite(result[attribute].observedAt) ? result[attribute].observedAt : 
-            isFinite(options?.from!) && isFinite(options?.to!) ? (options?.from! + options?.to!)/2 :
-            isFinite(options?.from!) ? options?.from : isFinite(options?.to!) ? options!.to : Date.now();
           const time = { 
             name: "Time", 
             values: [t], 
@@ -185,7 +195,7 @@ export class NgsildDataSource extends DataSourceApi<NgsildQuery, NgsildSourceOpt
       }): Promise<T> {
     const backend: BackendSrv = options?.backend || getBackendSrv();
     let endpoint: string;
-    const ngsildOptionsParam: string[] = [];
+    const ngsildOptionsParam: string[] = query.ngsildOptions ? [...query.ngsildOptions] : [];
     switch (query.queryType) {
     case NgsildQueryType.TEMPORAL:
       endpoint = "/temporal/entities";
@@ -285,7 +295,8 @@ export class NgsildDataSource extends DataSourceApi<NgsildQuery, NgsildSourceOpt
     if (options)
       {endpoint = appendAll(endpoint, options as any, ["limit", "offset", "lastN"]);}
     if (ngsildOptionsParam.length > 0) {
-      endpoint = JsUtils.appendQueryParam(endpoint, this.formatParameter + "=" + ngsildOptionsParam.join(","));
+      const uniqueOptions = [...new Set(ngsildOptionsParam)];
+      endpoint = JsUtils.appendQueryParam(endpoint, this.formatParameter + "=" + uniqueOptions.join(","));
     }
     if (query.scopeQuery?.trim()?.length! > 0) {
       let sq = query.scopeQuery!.trim();

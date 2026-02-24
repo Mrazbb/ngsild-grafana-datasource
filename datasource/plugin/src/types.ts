@@ -256,6 +256,10 @@ export interface NgsildQuery extends DataQuery {
    */
   secondaryArcColor?: string;
 
+  /**
+   * NGSI-LD Options parameter (e.g. sysAttrs, keyValues, concise)
+   */
+  ngsildOptions?: string[];
 }
 
 export const defaultQuery: Partial<NgsildQuery> = {

@@ -49,6 +49,11 @@ export class QueryEditor extends PureComponent<Props, QueryState> {
     {value: "modifiedAt", label: "modifiedAt", description: "Modification timestamp", title: "Timestamp of last modification."},
     {value: "deletedAt", label: "deletedAt", description: "Deletion timestamp", title: "Deletion timestamp of the entry."},
   ];
+  private static readonly NGSILD_OPTIONS: Array<SelectableValue<string>> = [
+    {value: "sysAttrs", label: "sysAttrs", description: "Include system attributes (createdAt, modifiedAt)", title: "Include system attributes"},
+    {value: "keyValues", label: "keyValues", description: "Simplified key-values representation", title: "Simplified key-values representation"},
+    {value: "concise", label: "concise", description: "Concise representation", title: "Concise representation"},
+  ];
 
   constructor(props: Props) {
     super(props);
@@ -327,6 +332,11 @@ export class QueryEditor extends PureComponent<Props, QueryState> {
     onChange({...query, aggrPeriodDuration: aggrPeriod.serialize() });
   }
 
+  onNgsildOptionsChange = (event: Array<SelectableValue<string>>) => {
+    const { onChange, query } = this.props;
+    onChange({ ...query, ngsildOptions: event.map(e => e.value || "").filter(e => e) });
+  };
+
   onGeoChanged = (geo: {georel?: string, geometry?: string, coordinates?: string, geoproperty?: string}) => {
     const { onChange, query } = this.props;
     onChange({...query, georel: geo?.georel, geometry: geo?.geometry||"Point", coordinates: geo?.coordinates, geoproperty: geo?.geoproperty||"location" });
@@ -462,6 +472,19 @@ export class QueryEditor extends PureComponent<Props, QueryState> {
                 onChange={this.onAttributeChange}
                 width={22}
                 ></MultiSelect>
+            </div>
+          </div>
+          <div className="gf-form-inline">
+            <div className="gf-form">
+              <InlineFormLabel width={12} tooltip="NGSI-LD Query Options (sysAttrs, keyValues, concise)">
+                Options
+              </InlineFormLabel>
+              <MultiSelect<string>
+                options={QueryEditor.NGSILD_OPTIONS}
+                value={query.ngsildOptions || []}
+                onChange={this.onNgsildOptionsChange}
+                width={22}
+              ></MultiSelect>
             </div>
           </div>
           <div className="gf-form-inline">

@@ -5,3 +5,6 @@
 *.swp
 .idea/
 *.iml
+.repomixignore
+repomix-output.md
+repomix.config.json

@@ -156,9 +156,9 @@ services:
         - BROKER_URL=${BROKER_URL:-http://orion:1026}
         - CONTEXT_URL=${CONTEXT_URL:-http://context/ngsi-context.jsonld}
         - TIMESERIES_URL=${TIMESERIES_URL:-http://mintaka:8083}
-        - TOKEN_URL=${TOKEN_URL}
-        - CLIENT_ID=${CLIENT_ID}
-        - CLIENT_SECRET=${CLIENT_SECRET}
+        - TOKEN_URL=${TOKEN_URL:-}
+        - CLIENT_ID=${CLIENT_ID:-}
+        - CLIENT_SECRET=${CLIENT_SECRET:-}
         #- GF_SERVER_SERVE_FROM_SUB_PATH=true
         #- GF_SERVER_ROOT_URL=/bfi/dashboards/
     networks:
