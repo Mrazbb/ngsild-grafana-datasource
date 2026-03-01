@@ -124,7 +124,6 @@ services:
       - CLIENT_ID=${CLIENT_ID:-fiware-grafana-123}
       - CLIENT_SECRET=${CLIENT_SECRET:-fiware-grafana-clientsecret}
       - BROKER_URL=${BROKER_URL:-http://wilma-orion:1027}
-      - TIMESERIES_URL=${TIMESERIES_URL:-http://wilma-mintaka:1028}
       
    
 networks:

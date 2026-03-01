@@ -46,13 +46,6 @@ export class ConfigEditor extends PureComponent<Props, State> {
     onOptionsChange(options2);
   };
 
-  onTimeseriesUrlChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const { options, onOptionsChange } = this.props;
-    const jsonData = options.jsonData;
-    const options2 = {...options, jsonData: {...jsonData, timeseriesUrl:event.currentTarget.value?.trim() ||""}};
-    onOptionsChange(options2);
-  };
-
   onAccessModeChange = (value: SelectableValue<string>) => {
     const { options, onOptionsChange } = this.props;
     onOptionsChange({ ...options, access: value.value || "proxy" });
@@ -112,16 +105,6 @@ export class ConfigEditor extends PureComponent<Props, State> {
             inputWidth={20}
             onChange={this.onUrlChange}
             value={options.url || ''}
-            placeholder="http://localhost:1026"
-          />
-        </div>
-        <div className="gf-form">
-          <FormField
-            label="Temporal broker URL"
-            labelWidth={12}
-            inputWidth={20}
-            onChange={this.onTimeseriesUrlChange}
-            value={jsonData.timeseriesUrl || ''}
             placeholder="http://localhost:1026"
           />
         </div>

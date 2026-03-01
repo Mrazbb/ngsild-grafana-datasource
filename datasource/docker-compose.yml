@@ -20,7 +20,7 @@ services:
             - GF_SERVER_DOMAIN=localhost
             - BROKER_URL=${BROKER_URL:-http://host.docker.internal:1026}
             - CONTEXT_URL=${CONTEXT_URL:-http://host.docker.internal:3004/ngsi-context.jsonld}
-            - TIMESERIES_URL=${TIMESERIES_URL:-http://host.docker.internal:8083}
+            - TENANT=${TENANT:-airquality}
             - TOKEN_URL=${TOKEN_URL:-}
             - CLIENT_ID=${CLIENT_ID:-}
             - CLIENT_SECRET=${CLIENT_SECRET:-}

@@ -1,0 +1,39 @@
+name: Build Plugin
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        working-directory: ./datasource/plugin
+        run: npm install
+
+      - name: Build plugin
+        working-directory: ./datasource/plugin
+        run: npm run build
+
+      - name: Pack plugin
+        working-directory: ./datasource/plugin
+        run: |
+          cp -r dist ngsild-grafana-datasource
+          zip ngsild-grafana-datasource.zip ngsild-grafana-datasource -r
+          rm -rf ngsild-grafana-datasource
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ngsild-grafana-datasource
+          path: ./datasource/plugin/ngsild-grafana-datasource.zip
+          retention-days: 7

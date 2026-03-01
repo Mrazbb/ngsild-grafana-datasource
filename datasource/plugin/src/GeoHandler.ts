@@ -7,7 +7,7 @@ export class GeoHandler {
     static handleGeoResult(entities: Entity[], query: NgsildQuery): MutableDataFrame {
         let allAttributes: string[] = entities
           .map(result => Object.keys(result))
-          .flatMap(attributes => attributes)
+          .reduce((acc, val) => acc.concat(val),[])
           // XXX
           .filter(attribute => attribute !== "@context" && attribute !== "location" && attribute !== "operationSpace" && attribute !== "observationSpace");
         allAttributes = [...new Set(allAttributes)]; // want unique attributes

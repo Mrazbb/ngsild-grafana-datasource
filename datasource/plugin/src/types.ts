@@ -272,7 +272,6 @@ export const defaultQuery: Partial<NgsildQuery> = {
  */
 export interface NgsildSourceOptions extends DataSourceJsonData {
   contextUrl?: string;
-  timeseriesUrl?: string;
   tokenUrl?: string;
   /**
    * NGSILD-Tenant header

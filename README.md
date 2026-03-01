@@ -27,7 +27,7 @@ MSYS_NO_PATHCONV=1 docker run --rm -d --name grafana-dev -p 3000:3000 \
     grafana/grafana:latest
 ```
 
-Create a new data source at http://localhost:3000/datasources/new. Filter for *ngsild* and select the NGSI-LD datasource. On the configuration page for the plugin, enter the URLs of the context provider, NGSI-LD broker and the temporal endpoint. With Docker Desktop on Windows the hostname *host.docker.internal* refers to the internal IP address of the host, which can be convenient if the mentioned services run on the host, too.
+Create a new data source at http://localhost:3000/datasources/new. Filter for *ngsild* and select the NGSI-LD datasource. On the configuration page for the plugin, enter the URLs of the context provider and NGSI-LD broker. With Docker Desktop on Windows the hostname *host.docker.internal* refers to the internal IP address of the host, which can be convenient if the mentioned services run on the host, too.
 
 To stop Grafana, run `docker stop grafana-dev`. 
 
@@ -82,7 +82,6 @@ After creating an instance of the datasource, the various URL endpoints for the 
 
 
 * Context broker URL (url): The main URL of the FIWARE context broker, e.g. [Orion-LD](https://github.com/FIWARE/context.Orion-LD), such as http://localhost:1026.
-* Temporal broker URL (jsonData.timeseriesUrl): The URL of the temporal endpoint of the FIWARE context broker, e.g. provided by [Mintaka](https://github.com/FIWARE/mintaka), such as http://localhost:8083
 * Context URL (jsonData.contextUrl): The URL of the context source, such as http://localhost/ngsi-context.jsonld
 * OAuth token URL (jsonData.tokenUrl): When authentication is required to access the context broker this is the URL of the IDM/OAuth token endpoint, provided for instance by [Keyrock](https://github.com/ging/fiware-idm). Example: http://localhost:3005/oauth2/token
 * Client id (secureJsonData.clientId): The client id for the OAuth client credentials grant flow assigned to Grafana. This must be configured in the IDM.
@@ -258,7 +257,6 @@ These options can be set via environment variables:
 
 * **BROKER_URL**: URL of the context broker. Default: http://host.docker.internal:1026
 * **CONTEXT_URL**: URL of the context provider. Default: http://host.docker.internal:3004/ngsi-context.jsonld}
-* **TIMESERIES_URL**: URL of the context broker endpoint for temporal queries. Default: http://host.docker.internal:8083
 * **TOKEN_URL**: URL of the OAuth token endpoint. Default: empty
 * **CLIENT_ID**: OAuth client id. Default: empty
 * **CLIENT_SECRET**: OAuth client secret. Default: empty

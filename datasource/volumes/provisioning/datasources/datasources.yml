@@ -21,12 +21,12 @@ datasources:
     isDefault: true
     jsonData:
       contextUrl: $CONTEXT_URL
-      timeseriesUrl: $TIMESERIES_URL
+      tenant: $TENANT
       tlsAuth: false
       tlsAuthWithCACert: false
       tlsSkipVerify: false
       httpMode: POST
       httpHeaderName1: 'Access-Token'
-      flavour: orion
+      flavour: generic
     secureJsonData: {}
     editable: true

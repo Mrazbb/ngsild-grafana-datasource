@@ -62,21 +62,50 @@ export class QueryEditor extends PureComponent<Props, QueryState> {
 
   private loadData(): Promise<unknown> { // initial recommendations
     const prom1 = this.props.datasource.request({queryType: NgsildQueryType.TYPES}) // TODO limit?
-      .then((types: EntityType[]) => {
+      .then((res: any) => {
+        let types: EntityType[] =[];
+        if (Array.isArray(res)) {
+          types = res;
+        } else if (res && res.typeList && Array.isArray(res.typeList)) {
+          types = res.typeList.map((t: string) => ({typeName: t, attributeNames:[]}));
+        } else if (res && typeof res === 'object') {
+          types = [res];
+        }
+        if (!Array.isArray(types)) {
+          console.error("Expected array of types, but got:", types);
+          types =[];
+        }
         types.forEach(type => {
           const idx: number = type.typeName?.lastIndexOf(".");
           type.shortName = idx >= 0 && idx < type.typeName.length-1 ? type.typeName.substring(idx+1) : type.typeName;
         });
         return new Promise<EntityType[]>(resolve => this.setState({ types: types }, () => resolve(types)));
+      }).catch(err => {
+        console.error("Failed to load types", err);
+        return [];
       });
     const prom2 = this.props.datasource.request({queryType: NgsildQueryType.ATTRIBUTES})
-      .then((attributes: {attributeList: string[]}) => new Promise<void>(resolve => this.setState({ attributes: attributes.attributeList }, resolve)));
+      .then((attributes: any) => {
+        let attributeList = attributes?.attributeList || (Array.isArray(attributes) ? attributes :[]);
+        if (attributes && !Array.isArray(attributes) && !attributes.attributeList && typeof attributes === 'object') {
+           attributeList = [attributes];
+        }
+        attributeList = attributeList.map((a: any) => a.attributeName || a.id || a);
+        return new Promise<void>(resolve => this.setState({ attributes: attributeList }, resolve));
+      }).catch(err => {
+        console.error("Failed to load attributes", err);
+      });
     const prom3 = prom1.then(async (types: EntityType[]) => {
+      if (!Array.isArray(types) || types.length === 0) {
+        return;
+      }
       if (types.length > 25)
         {types = types.filter((_, idx) => idx<25);}
       const type: string|undefined = types.length > 0 ? types.map(type => type.typeName).join(",") : undefined;
       // TODO ideally, we'd like to retrieve samples for the different types
       return this.loadEntities(this.props.datasource, type, 100);
+    }).catch(err => {
+      console.error("Failed to load entities", err);
     });
     return Promise.all([prom1, prom2, prom3]);
   }
@@ -87,25 +116,30 @@ export class QueryEditor extends PureComponent<Props, QueryState> {
     const typeEntitiesLoaded: boolean = !!this.state?.entityIdsByType && type in this.state.entityIdsByType;
     if (typeEntitiesLoaded)
       {return;}
-    const entities: Entity[] = 
-        await datasource.request({queryType: NgsildQueryType.ENTITY, entityType: type}, {limit: limit||25});
-    if (entities.length === 0)
-      {return;}
-    const entitiesByType: Record<string, string[]> = 
-        this.state?.entityIdsByType ? {...this.state.entityIdsByType} : {};      
-    entitiesByType[type] = entities.map(entity => entity.id);
-    const attributesById = 
-        this.state?.attributesByEntityId ? {...this.state.attributesByEntityId} : {};
-    const attributesForEntity = (entity: Entity): string[] => Object.entries(entity).filter(([key, value]) => {
-      if (INVALID_ATTRIBUTES.indexOf(key) >= 0)
-        {return false;}
-      if (!value.value || !isFinite(value.value as any))
-        {return false;}
-      return true;
-    }).map(([key, _]) => key);
-    const newAttributesByIds = Object.fromEntries(entities.map(entity => [entity.id, attributesForEntity(entity)]));
-    Object.assign(attributesById, newAttributesByIds);
-    return new Promise<void>(resolve => this.setState({entityIdsByType: entitiesByType, attributesByEntityId: attributesById}, resolve));
+    try {
+      let entities: any = 
+          await datasource.request({queryType: NgsildQueryType.ENTITY, entityType: type}, {limit: limit||25});
+      if (entities && !Array.isArray(entities)) {
+         entities = [entities];
+      }
+      if (!Array.isArray(entities) || entities.length === 0)
+        {return;}
+      const entitiesByType: Record<string, string[]> = 
+          this.state?.entityIdsByType ? {...this.state.entityIdsByType} : {};      
+      entitiesByType[type] = entities.map((entity: any) => entity.id);
+      const attributesById = 
+          this.state?.attributesByEntityId ? {...this.state.attributesByEntityId} : {};
+      const attributesForEntity = (entity: Entity): string[] => Object.entries(entity).filter(([key, value]) => {
+        if (INVALID_ATTRIBUTES.indexOf(key) >= 0)
+          {return false;}
+        return true;
+      }).map(([key, _]) => key);
+      const newAttributesByIds = Object.fromEntries(entities.map((entity: any) =>[entity.id, attributesForEntity(entity)]));
+      Object.assign(attributesById, newAttributesByIds);
+      return new Promise<void>(resolve => this.setState({entityIdsByType: entitiesByType, attributesByEntityId: attributesById}, resolve));
+    } catch (err) {
+      console.error("Failed to load entities", err);
+    }
   }
 
   private async loadAttributes(datasource: NgsildDataSource, entityId?: string) {
@@ -114,16 +148,23 @@ export class QueryEditor extends PureComponent<Props, QueryState> {
     const attributesLoaded: boolean = !!this.state?.attributesByEntityId && entityId in this.state.attributesByEntityId;
     if (attributesLoaded)
       {return;}
-    const entity: Entity = await datasource.request({queryType: NgsildQueryType.ENTITY, entityId: entityId});
-    if (!entity)
-      {return;}
-    const attrs: string[] = Object.keys(entity).filter(attr => INVALID_ATTRIBUTES.indexOf(attr) < 0)
-    if (attrs.length === 0)
-      {return;}
-    const attrsByEntity: Record<string, string[]> = 
-      this.state?.attributesByEntityId ? {...this.state.attributesByEntityId} : {};
-    attrsByEntity[entityId] = attrs;
-    this.setState({ attributesByEntityId: attrsByEntity });
+    try {
+      let entity: any = await datasource.request({queryType: NgsildQueryType.ENTITY, entityId: entityId});
+      if (Array.isArray(entity)) {
+         entity = entity[0];
+      }
+      if (!entity)
+        {return;}
+      const attrs: string[] = Object.keys(entity).filter(attr => INVALID_ATTRIBUTES.indexOf(attr) < 0)
+      if (attrs.length === 0)
+        {return;}
+      const attrsByEntity: Record<string, string[]> = 
+        this.state?.attributesByEntityId ? {...this.state.attributesByEntityId} : {};
+      attrsByEntity[entityId] = attrs;
+      this.setState({ attributesByEntityId: attrsByEntity });
+    } catch (err) {
+      console.error("Failed to load attributes", err);
+    }
   }
 
   /*

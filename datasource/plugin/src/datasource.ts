@@ -22,7 +22,6 @@ import { NodeGraphHandler } from 'NodeGraphHandler';
 export class NgsildDataSource extends DataSourceApi<NgsildQuery, NgsildSourceOptions> {
 
   private readonly baseUrl: string;  // http://broker:1026/ngsi-ld/v1
-  private readonly timeseriesUrl: string;  // http://broker-ts:8080
   private readonly contextUrl: string; // http://context/ngsi-context.jsonld
   private readonly contextLinkHeader: string; // <http://context/ngsi-context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json
   private readonly flavour: "generic"|"orion";
@@ -33,6 +32,9 @@ export class NgsildDataSource extends DataSourceApi<NgsildQuery, NgsildSourceOpt
   constructor(instanceSettings: DataSourceInstanceSettings<NgsildSourceOptions>) {
     super(instanceSettings);
     let baseUrl = instanceSettings.url || "";
+    if (instanceSettings.jsonData?.authType === "oauth") {
+      baseUrl = JsUtils.concatPaths(baseUrl, "/ngsild-oauth");
+    }
     if (baseUrl.indexOf("/ngsi-ld/v1") < 0)
       {baseUrl = JsUtils.concatPaths(baseUrl, "/ngsi-ld/v1");}
     this.baseUrl = baseUrl;
@@ -40,13 +42,6 @@ export class NgsildDataSource extends DataSourceApi<NgsildQuery, NgsildSourceOpt
     this.tenant = instanceSettings.jsonData?.tenant?.trim() || undefined;
     this.formatParameter = instanceSettings.jsonData?.formatParameter?.toLowerCase() === "format" ? "format" : "options";
     this.avoidSimplifiedTemporalFormat = !!instanceSettings.jsonData.avoidSimplifiedTemporalFormat;
-    const actualTimeseriesUrl: string = instanceSettings.jsonData?.timeseriesUrl || "";
-    // note: the route alias "temporal" for instanceSettings.jsonData.timeseriesUrl in the backend proxy 
-    // is defined in plugin.json, see https://community.grafana.com/t/grafana-datasource-backend-proxy/6861/4
-    // it is a bit strange though that we need to prepend the broker url for this
-    const timeseriesUrl: string = instanceSettings.access === "proxy" ? 
-      JsUtils.concatPaths(instanceSettings.url?.replace("/ngsi-ld/v1", "")||"", "temporal") : actualTimeseriesUrl; 
-    this.timeseriesUrl = timeseriesUrl;
     this.contextUrl = instanceSettings.jsonData?.contextUrl || "";
     this.contextLinkHeader = !this.contextUrl ? "" :
       "<" + this.contextUrl + ">; rel=\"http://www.w3.org/ns/json-ld#context\"; type=\"application/ld+json\"";
@@ -59,7 +54,7 @@ export class NgsildDataSource extends DataSourceApi<NgsildQuery, NgsildSourceOpt
         {backend: backend, from: range?.from?.valueOf(), to: range?.to?.valueOf()}));
     const frames: MutableDataFrame[] = (await Promise.all(data0))
       .filter(f => f?.length > 0)
-      .flatMap(f => f);
+      .reduce((acc, val) => acc.concat(val),[]);
     return { data: frames };
   }
 
@@ -102,7 +97,7 @@ export class NgsildDataSource extends DataSourceApi<NgsildQuery, NgsildSourceOpt
         if (result[attribute].type === "Relationship")
           {continue;}
         const attrName: string = namePattern === NamePattern.ENTITY_NAME ? name : name + attribute
-        if (!this.avoidSimplifiedTemporalFormat && result[attribute].values) {
+        if (!this.avoidSimplifiedTemporalFormat && Array.isArray(result[attribute].values)) {
           const data: Measurement[] = result[attribute].values;
           const field = { 
             name:  attrName, 
@@ -200,7 +195,7 @@ export class NgsildDataSource extends DataSourceApi<NgsildQuery, NgsildSourceOpt
     case NgsildQueryType.TEMPORAL:
       endpoint = "/temporal/entities";
       if (query.entityId)
-        {endpoint += "/" + /*encodeURIComponent(*/query.entityId/*)*/;} // note: encoding does not work with the backend proxy
+        {endpoint += "/" + encodeURIComponent(query.entityId);}
       if (!this.avoidSimplifiedTemporalFormat) 
         {ngsildOptionsParam.push("temporalValues");} // make sure to query the simplified temporal representation
       if (query.aggrMethod) {
@@ -231,11 +226,11 @@ export class NgsildDataSource extends DataSourceApi<NgsildQuery, NgsildSourceOpt
     case NgsildQueryType.ENTITY:
       endpoint = "/entities";
       if (query.entityId) {
-        const hasComma: boolean = query.entityId.indexOf(",")>=0;
+        const hasComma: boolean = typeof query.entityId === "string" && query.entityId.indexOf(",")>=0;
         if (hasComma)
           {endpoint += "?id=" + query.entityId.split(",").map(id=>id.trim()).filter(id=>id).map(encodeURIComponent).join(",");}
         else
-          {endpoint += "/" + /*encodeURIComponent(*/query.entityId/*)*/;} // note: encoding does not work with the backend proxy
+          {endpoint += "/" + encodeURIComponent(query.entityId);} 
       }
       if (query.queryType === NgsildQueryType.GEO) {
         if (query.attributes?.length!>0) {
@@ -266,9 +261,10 @@ export class NgsildDataSource extends DataSourceApi<NgsildQuery, NgsildSourceOpt
     if (query.entityType && !query.entityId)
       {endpoint = JsUtils.appendQueryParam(endpoint, "type=" + encodeURIComponent(query.entityType));}
     if (query.attributes?.length!>0) {
+      const attrs = Array.isArray(query.attributes) ? query.attributes : [query.attributes as any as string];
       if (query.namePattern !== NamePattern.ATTRIBUTE.valueOf() && !!query.entityName && query.entityName !== "id" && query.entityName !== "id_short")
-        {query.attributes?.push(query.entityName);}
-      endpoint = JsUtils.appendQueryParam(endpoint, "attrs=" + query.attributes?.map(encodeURIComponent).join(","));
+        {attrs.push(query.entityName);}
+      endpoint = JsUtils.appendQueryParam(endpoint, "attrs=" + attrs.map(encodeURIComponent).join(","));
     }
     if (query.queryType === NgsildQueryType.TEMPORAL)
       {endpoint = NgsildDataSource.setTimeInterval(endpoint, options?.from, options?.to);}
@@ -306,8 +302,7 @@ export class NgsildDataSource extends DataSourceApi<NgsildQuery, NgsildSourceOpt
       endpoint = JsUtils.appendQueryParam(endpoint, "scopeQ=" + sq)
     }
     const isVersionRequest: boolean = endpoint?.startsWith("/version");
-    const baseUrl = isVersionRequest ? this.baseUrl.replace("/ngsi-ld/v1", "") : 
-      query.queryType === NgsildQueryType.TEMPORAL ? this.timeseriesUrl :  this.baseUrl;
+    const baseUrl = isVersionRequest ? this.baseUrl.replace("/ngsi-ld/v1", "") : this.baseUrl;
     const url: string = JsUtils.concatPaths(baseUrl, endpoint);
     const fetchOptions: BackendSrvRequest = {
       method: "GET",
@@ -353,15 +348,26 @@ export class NgsildDataSource extends DataSourceApi<NgsildQuery, NgsildSourceOpt
     return new Promise((resolve, reject) => {
       observable.subscribe({
         next: (response: FetchResponse<T>) => {
-          if (!response.ok) {
+          if (response.ok) {
+            resolve(response.data);
+          } else {
             let message: string = response.status + ": " + response.statusText;
-            if (response.data)
-              {message += " (" + response.data + ")";}
+            if (response.data) {
+              const details = typeof response.data === 'string' ? response.data : JSON.stringify(response.data);
+              message += " (" + details + ")";
+            }
             reject("Failed to contact data source " + message);
           }
-          resolve(response.data);
         },
-        error: (e: any) => reject(e)
+        error: (e: any) => {
+          if (e && e.data && e.data.message) {
+            reject(e.data.message);
+          } else if (e && e.statusText) {
+            reject(e.status + ": " + e.statusText);
+          } else {
+            reject(e);
+          }
+        }
       })
     });
   }

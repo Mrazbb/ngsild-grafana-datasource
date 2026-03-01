@@ -31,19 +31,6 @@
   },
   "routes": [
     {
-      "path": "temporal",
-      "method": "GET",
-      "url": "{{.JsonData.timeseriesUrl}}",
-      "tokenAuth": {
-        "url": "{{.JsonData.tokenUrl}}",
-        "params": {
-          "grant_type": "client_credentials",
-          "client_id": "{{ .SecureJsonData.clientId }}",
-          "client_secret": "{{ .SecureJsonData.clientSecret }}"
-        }
-      }
-    },
-    {
       "path": "",
       "method": "GET",
       "tokenAuth": {
