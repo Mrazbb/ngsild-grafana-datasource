@@ -1,11 +1,17 @@
 name: Build Plugin
 
 on:
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout repository
@@ -15,20 +21,29 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: 'npm' # Speeds up subsequent runs by caching dependencies
+          cache-dependency-path: './datasource/plugin/package-lock.json'
 
       - name: Install dependencies
         working-directory: ./datasource/plugin
-        run: npm install
+        run: npm ci # 'npm ci' is faster and more reliable for CI environments than 'npm install'
 
       - name: Build plugin
         working-directory: ./datasource/plugin
         run: npm run build
 
+      # OPTIONAL: Sign your plugin for Grafana
+      # - name: Sign plugin
+      #   working-directory: ./datasource/plugin
+      #   run: npx --yes @grafana/sign-plugin@latest
+      #   env:
+      #     GRAFANA_API_KEY: ${{ secrets.GRAFANA_API_KEY }}
+
       - name: Pack plugin
         working-directory: ./datasource/plugin
         run: |
           cp -r dist ngsild-grafana-datasource
-          zip ngsild-grafana-datasource.zip ngsild-grafana-datasource -r
+          zip -r ngsild-grafana-datasource.zip ngsild-grafana-datasource
           rm -rf ngsild-grafana-datasource
 
       - name: Upload artifact
@@ -37,3 +52,10 @@ jobs:
           name: ngsild-grafana-datasource
           path: ./datasource/plugin/ngsild-grafana-datasource.zip
           retention-days: 7
+
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ./datasource/plugin/ngsild-grafana-datasource.zip
+          generate_release_notes: true

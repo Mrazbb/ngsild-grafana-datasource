@@ -1,5 +1,9 @@
 # NGSI-LD Grafana datasource plugin
 
+
+git tag v1.2.1
+git push origin v1.2.1
+
 A Grafana datasource for FIWARE context brokers. Supports temporal, geo and graph data. 
 
 Zenodo link: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7428995.svg)](https://doi.org/10.5281/zenodo.7428995)
