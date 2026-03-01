@@ -1,8 +1,8 @@
 # NGSI-LD Grafana datasource plugin
 
 
-git tag v5
-git push origin v5
+git tag v6
+git push origin v6
 
 A Grafana datasource for FIWARE context brokers. Supports temporal, geo and graph data. 
 
