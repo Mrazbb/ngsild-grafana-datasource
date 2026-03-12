@@ -61,24 +61,46 @@ export class ConfigEditor extends PureComponent<Props, State> {
   onAuthStatusChange = (active: boolean) => {
     const { options, onOptionsChange } = this.props;
     const jsonData = { ...options.jsonData, authType: active ? "oauth" : undefined};
+    if (!active) {
+       jsonData.tokenUrl = undefined;
+       jsonData.clientId = undefined;
+       jsonData.clientSecret = undefined;
+       jsonData.isEnvAuth = false;
+    }
     onOptionsChange({ ...options, jsonData: jsonData });
   };
 
+  onEnvAuthChange = (active: boolean) => {
+    const { options, onOptionsChange } = this.props;
+    const jsonData = { ...options.jsonData, isEnvAuth: active };
+    if (active) {
+      jsonData.authType = "oauth";
+      jsonData.tokenUrl = "$TOKEN_URL";
+      const secureJsonData = {
+        ...(options.secureJsonData || {}),
+        clientId: "$CLIENT_ID",
+        clientSecret: "$CLIENT_SECRET"
+      };
+      onOptionsChange({ ...options, jsonData, secureJsonData });
+    } else {
+      // when deactivating, we keep oauth but clear the env values
+      jsonData.tokenUrl = "";
+      const secureJsonData = {
+        ...(options.secureJsonData || {}),
+        clientId: "",
+        clientSecret: ""
+      };
+      onOptionsChange({ ...options, jsonData, secureJsonData });
+    }
+  };
+
   onClientIdChange = (value: string) => {
-    // removing the client id does not make sense, if this is desired then the authentication should rather be disabled
-    // otherwise any config change would remove the configured id
-    if (!value) 
-      {return;}
     const { options, onOptionsChange } = this.props;
     const securejsonData = { ...(options.secureJsonData || {}), clientId: value };
     onOptionsChange({ ...options, secureJsonData: securejsonData });
   }
 
   onClientSecretChange = (value: string) => {
-    // removing the client secret does not make sense, if this is desired then the authentication should rather be disabled
-    // otherwise any config change would remove the configured secret
-    if (!value) 
-      {return;}
     const { options, onOptionsChange } = this.props;
     const securejsonData = { ...(options.secureJsonData || {}), clientSecret: value };
     onOptionsChange({ ...options, secureJsonData: securejsonData });
@@ -93,9 +115,10 @@ export class ConfigEditor extends PureComponent<Props, State> {
   render() {
     const { options } = this.props;
     const { jsonData, secureJsonFields, secureJsonData } = options;
-    const isDirectMode: boolean = options.access === "direct";
-    const isAuthActive: boolean = jsonData.authType === "oauth" /*&& jsonData.tokenAuth === "tokenAuth"; */// TODO validate authType?
-    const authConfigured: boolean = isAuthActive && secureJsonFields.clientId && secureJsonFields.clientSecret;
+    const isDirectMode = options.access === "direct";
+    const isEnvAuth = !!(jsonData.isEnvAuth || (jsonData.tokenUrl === "$TOKEN_URL" && (jsonData.clientId === "$CLIENT_ID" || secureJsonData?.clientId === "$CLIENT_ID")));
+    const isAuthActive = jsonData.authType === "oauth" || isEnvAuth || !!(jsonData.tokenUrl && (secureJsonFields?.clientId || jsonData.clientId));
+    const authConfigured = !!(isAuthActive && (secureJsonFields?.clientId || jsonData.clientId || secureJsonData?.clientId) && (secureJsonFields?.clientSecret || jsonData.clientSecret || secureJsonData?.clientSecret));
     return (
       <div className="gf-form-group">
         <div className="gf-form">
@@ -200,6 +223,19 @@ export class ConfigEditor extends PureComponent<Props, State> {
               </div>
             </div>
             {isAuthActive &&
+              <div className="gf-form-inline">
+                <div className="gf-form">
+                  {/* @ts-ignore */} 
+                  <Checkbox
+                    checked={isEnvAuth}
+                    onChange={c => this.onEnvAuthChange(c.currentTarget.checked)}
+                    label="Client OAuth defined in environment?"
+                    title="If checked, OAuth credentials will be taken from environment variables ($TOKEN_URL, $CLIENT_ID, $CLIENT_SECRET)."
+                  ></Checkbox>
+                </div>
+              </div>
+            }
+            {isAuthActive && !isEnvAuth &&
               <React.Fragment>
                 <div className="gf-form-inline">
                   <div className="gf-form">
@@ -222,7 +258,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
                     </InlineFormLabel>
                     {/* @ts-ignore */} 
                     <Input
-                      value={secureJsonData?.clientId || ""}
+                      value={secureJsonData?.clientId || jsonData?.clientId || ""}
                       placeholder={authConfigured ? "Value configured" : "No client id configured yet"}
                       onChange={evt => this.onClientIdChange(evt.currentTarget.value?.trim())}
                       title="OAuth client id. This must be configured in the authentication server."
@@ -237,7 +273,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
                     </InlineFormLabel>
                     {/* @ts-ignore */} 
                     <Input
-                      value={secureJsonData?.clientSecret || ""}
+                      value={secureJsonData?.clientSecret || jsonData?.clientSecret || ""}
                       placeholder={authConfigured ? "Value configured" : "No client secret configured yet"}
                       onChange={evt => this.onClientSecretChange(evt.currentTarget.value?.trim())}
                       title="OAuth client secret. This must be configured in the authentication server, too."

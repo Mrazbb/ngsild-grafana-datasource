@@ -22,11 +22,15 @@ datasources:
     jsonData:
       contextUrl: $CONTEXT_URL
       tenant: $TENANT
+      tokenUrl: $TOKEN_URL
+      authType: oauth
       tlsAuth: false
       tlsAuthWithCACert: false
       tlsSkipVerify: false
       httpMode: POST
       httpHeaderName1: 'Access-Token'
       flavour: generic
-    secureJsonData: {}
+    secureJsonData:
+      clientId: $CLIENT_ID
+      clientSecret: $CLIENT_SECRET
     editable: true

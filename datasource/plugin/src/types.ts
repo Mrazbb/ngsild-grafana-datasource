@@ -293,6 +293,9 @@ export interface NgsildSourceOptions extends DataSourceJsonData {
   flavour?: "generic"|"orion"; 
   //tokenAuth?: string; // will be set automatically to "tokenAuth" when auth is active => fed into plugin.json
   authType?: string;
+  clientId?: string;
+  clientSecret?: string;
+  isEnvAuth?: boolean;
 }
 
 /**

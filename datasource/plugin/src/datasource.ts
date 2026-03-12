@@ -33,10 +33,6 @@ export class NgsildDataSource extends DataSourceApi<NgsildQuery, NgsildSourceOpt
     super(instanceSettings);
     let baseUrl = instanceSettings.url || "";
 
-    if (instanceSettings.jsonData?.authType === 'oauth') {
-      baseUrl = JsUtils.concatPaths(baseUrl, "ngsild-oauth");
-    }
-
     if (baseUrl.indexOf("/ngsi-ld/v1") < 0)
       {baseUrl = JsUtils.concatPaths(baseUrl, "/ngsi-ld/v1");}
 
@@ -198,8 +194,14 @@ export class NgsildDataSource extends DataSourceApi<NgsildQuery, NgsildSourceOpt
     switch (query.queryType) {
     case NgsildQueryType.TEMPORAL:
       endpoint = "/temporal/entities";
-      if (query.entityId)
-        {endpoint += "/" + encodeURIComponent(query.entityId);}
+      if (query.entityId) {
+        const hasComma: boolean = typeof query.entityId === "string" && query.entityId.indexOf(",")>=0;
+        if (hasComma) {
+          endpoint += "?id=" + query.entityId.split(",").map(id=>id.trim()).filter(id=>id).map(encodeURIComponent).join(",");
+        } else {
+          endpoint += "/" + encodeURIComponent(query.entityId);
+        }
+      }
       if (!this.avoidSimplifiedTemporalFormat) 
         {ngsildOptionsParam.push("temporalValues");} // make sure to query the simplified temporal representation
       if (query.aggrMethod) {
