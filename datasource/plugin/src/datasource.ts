@@ -32,11 +32,11 @@ export class NgsildDataSource extends DataSourceApi<NgsildQuery, NgsildSourceOpt
   constructor(instanceSettings: DataSourceInstanceSettings<NgsildSourceOptions>) {
     super(instanceSettings);
     let baseUrl = instanceSettings.url || "";
-    if (instanceSettings.jsonData?.authType === "oauth") {
-      baseUrl = JsUtils.concatPaths(baseUrl, "/ngsild-oauth");
-    }
+
     if (baseUrl.indexOf("/ngsi-ld/v1") < 0)
       {baseUrl = JsUtils.concatPaths(baseUrl, "/ngsi-ld/v1");}
+
+    
     this.baseUrl = baseUrl;
     this.flavour = instanceSettings.jsonData?.flavour?.toLowerCase() as any || "generic";
     this.tenant = instanceSettings.jsonData?.tenant?.trim() || undefined;
