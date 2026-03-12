@@ -21,6 +21,7 @@ services:
             - BROKER_URL=${BROKER_URL:-http://host.docker.internal:1026}
             - CONTEXT_URL=${CONTEXT_URL:-http://host.docker.internal:3004/ngsi-context.jsonld}
             - TENANT=${TENANT:-airquality}
+            - TENANT_PATH=${TENANT_PATH:-/#}
             - TOKEN_URL=${TOKEN_URL:-}
             - CLIENT_ID=${CLIENT_ID:-}
             - CLIENT_SECRET=${CLIENT_SECRET:-}

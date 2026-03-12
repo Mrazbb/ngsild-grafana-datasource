@@ -30,6 +30,13 @@ export class ConfigEditor extends PureComponent<Props, State> {
     onOptionsChange(options2);
   };
 
+  onTenantPathChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const { options, onOptionsChange } = this.props;
+    const jsonData = options.jsonData;
+    const options2 = {...options, jsonData: {...jsonData, tenantPath: event.currentTarget.value?.trim() ||""}};
+    onOptionsChange(options2);
+  };
+
   onFormatParameterChange = (value: SelectableValue<"format"|"options">) => {
     const newFormatParam: "format"|"options" = value.value === "format" ? "format" : "options" 
     const { options, onOptionsChange } = this.props;
@@ -150,6 +157,17 @@ export class ConfigEditor extends PureComponent<Props, State> {
             onChange={this.onTenantChange}
             value={jsonData.tenant || ''}
             placeholder="Tenant id"
+          />
+        </div>
+        <div className="gf-form">
+          <FormField
+            label="Tenant Path"
+            tooltip="Optional tenant path. Formerly called 'Fiware-ServicePath' or 'NGSILD-Path'."
+            labelWidth={12}
+            inputWidth={20}
+            onChange={this.onTenantPathChange}
+            value={jsonData.tenantPath || ''}
+            placeholder="/#"
           />
         </div>
         <div className="gf-form-inline">

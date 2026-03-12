@@ -31,26 +31,27 @@
   },
   "routes":[
     {
-      "path": "ngsi-ld",
-      "url": "{{ .Url }}/ngsi-ld",
+      "path": "temporal",
+      "method": "GET",
+      "url": "{{.JsonData.timeseriesUrl}}",
       "tokenAuth": {
-        "url": "{{ .JsonData.tokenUrl }}",
+        "url": "{{.JsonData.tokenUrl}}",
         "params": {
           "grant_type": "client_credentials",
-          "client_id": "{{ if .SecureJsonData.clientId }}{{ .SecureJsonData.clientId }}{{ else }}{{ .JsonData.clientId }}{{ end }}",
-          "client_secret": "{{ if .SecureJsonData.clientSecret }}{{ .SecureJsonData.clientSecret }}{{ else }}{{ .JsonData.clientSecret }}{{ end }}"
+          "client_id": "{{ .SecureJsonData.clientId }}",
+          "client_secret": "{{ .SecureJsonData.clientSecret }}"
         }
       }
     },
     {
-      "path": "version",
-      "url": "{{ .Url }}/version",
+      "path": "",
+      "method": "GET",
       "tokenAuth": {
-        "url": "{{ .JsonData.tokenUrl }}",
+        "url": "{{.JsonData.tokenUrl}}",
         "params": {
           "grant_type": "client_credentials",
-          "client_id": "{{ if .SecureJsonData.clientId }}{{ .SecureJsonData.clientId }}{{ else }}{{ .JsonData.clientId }}{{ end }}",
-          "client_secret": "{{ if .SecureJsonData.clientSecret }}{{ .SecureJsonData.clientSecret }}{{ else }}{{ .JsonData.clientSecret }}{{ end }}"
+          "client_id": "{{ .SecureJsonData.clientId }}",
+          "client_secret": "{{ .SecureJsonData.clientSecret }}"
         }
       }
     }

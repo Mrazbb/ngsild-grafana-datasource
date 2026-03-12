@@ -273,25 +273,11 @@ export const defaultQuery: Partial<NgsildQuery> = {
 export interface NgsildSourceOptions extends DataSourceJsonData {
   contextUrl?: string;
   tokenUrl?: string;
-  /**
-   * NGSILD-Tenant header
-   */
   tenant?: string;
-  /**
-   * Specify whether to use "format" of "options" parameter.
-   * Currently, "options" is the default, at some point the spec-conformant "format" should become the default,
-   * once supported by the main brokers.
-   */
+  tenantPath?: string;
   formatParameter?: "format"|"options";
-  /**
-   * Usually temporal data is requested in simplified temporal format, but this can be changed via this parameter.
-   */
   avoidSimplifiedTemporalFormat?: boolean;
-  /**
-   * Determines how to execute a test request; orion uses the custom /version endpoint, generic uses /types
-   */
   flavour?: "generic"|"orion"; 
-  //tokenAuth?: string; // will be set automatically to "tokenAuth" when auth is active => fed into plugin.json
   authType?: string;
   clientId?: string;
   clientSecret?: string;

@@ -26,6 +26,7 @@ export class NgsildDataSource extends DataSourceApi<NgsildQuery, NgsildSourceOpt
   private readonly contextLinkHeader: string; // <http://context/ngsi-context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json
   private readonly flavour: "generic"|"orion";
   private readonly tenant: string|undefined;
+  private readonly tenantPath: string|undefined;
   private readonly formatParameter: "options"|"format"; // changed from options to format between spec versions ...
   private readonly avoidSimplifiedTemporalFormat: boolean;
 
@@ -40,6 +41,7 @@ export class NgsildDataSource extends DataSourceApi<NgsildQuery, NgsildSourceOpt
     this.baseUrl = baseUrl;
     this.flavour = instanceSettings.jsonData?.flavour?.toLowerCase() as any || "generic";
     this.tenant = instanceSettings.jsonData?.tenant?.trim() || undefined;
+    this.tenantPath = instanceSettings.jsonData?.tenantPath?.trim() || undefined;
     this.formatParameter = instanceSettings.jsonData?.formatParameter?.toLowerCase() === "format" ? "format" : "options";
     this.avoidSimplifiedTemporalFormat = !!instanceSettings.jsonData.avoidSimplifiedTemporalFormat;
     this.contextUrl = instanceSettings.jsonData?.contextUrl || "";
@@ -327,6 +329,9 @@ export class NgsildDataSource extends DataSourceApi<NgsildQuery, NgsildSourceOpt
     }
     if (this.tenant) {
       fetchOptions.headers!["NGSILD-Tenant"] = this.tenant;
+    }
+    if (this.tenantPath) {
+      fetchOptions.headers!["NGSILD-Path"] = this.tenantPath;
     }
     const result0: T = await NgsildDataSource.toPromise(backend.fetch(fetchOptions));
     return result0;

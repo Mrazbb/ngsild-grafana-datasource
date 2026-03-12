@@ -22,6 +22,7 @@ datasources:
     jsonData:
       contextUrl: $CONTEXT_URL
       tenant: $TENANT
+      tenantPath: '/#'
       tlsAuth: false
       tlsAuthWithCACert: false
       tlsSkipVerify: false
