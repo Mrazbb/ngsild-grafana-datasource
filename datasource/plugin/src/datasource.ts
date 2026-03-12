@@ -33,6 +33,10 @@ export class NgsildDataSource extends DataSourceApi<NgsildQuery, NgsildSourceOpt
     super(instanceSettings);
     let baseUrl = instanceSettings.url || "";
 
+    if (instanceSettings.jsonData?.authType === 'oauth') {
+      baseUrl = JsUtils.concatPaths(baseUrl, "ngsild-oauth");
+    }
+
     if (baseUrl.indexOf("/ngsi-ld/v1") < 0)
       {baseUrl = JsUtils.concatPaths(baseUrl, "/ngsi-ld/v1");}
 
@@ -200,12 +204,12 @@ export class NgsildDataSource extends DataSourceApi<NgsildQuery, NgsildSourceOpt
         {ngsildOptionsParam.push("temporalValues");} // make sure to query the simplified temporal representation
       if (query.aggrMethod) {
         ngsildOptionsParam.push("aggregatedValues"); // 
-        endpoint = JsUtils.appendQueryParam(endpoint, "aggrMethods=" + query.aggrMethod);
+        endpoint = JsUtils.appendQueryParam(endpoint, "aggrMethods=" + encodeURIComponent(query.aggrMethod));
         if (query.aggrPeriodDuration)
-          {endpoint = JsUtils.appendQueryParam(endpoint, "aggrPeriodDuration=" + query.aggrPeriodDuration);}
+          {endpoint = JsUtils.appendQueryParam(endpoint, "aggrPeriodDuration=" + encodeURIComponent(query.aggrPeriodDuration));}
       }
       if (query.timeProperty && query.timeProperty !== "observedAt")
-        {endpoint = JsUtils.appendQueryParam(endpoint, "timeproperty=" + query.timeProperty);}
+        {endpoint = JsUtils.appendQueryParam(endpoint, "timeproperty=" + encodeURIComponent(query.timeProperty));}
       break;
     // the /version endpoint is actually orion-specific and can only be used with flavour === "orion"
     // since we use this for testing the datasource only it is ok to simply use some random other endpoint
@@ -241,11 +245,14 @@ export class NgsildDataSource extends DataSourceApi<NgsildQuery, NgsildSourceOpt
         }
       }
       else if (query.queryType === NgsildQueryType.NODE_GRAPH) {
-        let attributes: string[] = query.attributes || [];
+        let attributes: string[] = query.attributes ||[];
+        if (!Array.isArray(attributes)) {
+          attributes = [attributes];
+        }
         const addAttributes = (statAttributes?: Record<string, string[]>) => {
           if (!statAttributes)
             {return;}
-          attributes.push(...new Set(Object.values(statAttributes).flatMap(arr => arr)));
+          attributes.push(...new Set(Object.values(statAttributes).reduce((acc, val) => acc.concat(val), [] as string[])));
         }
         addAttributes(query.primaryNodeAttributes);
         addAttributes(query.secondaryNodeAttributes);
@@ -299,7 +306,7 @@ export class NgsildDataSource extends DataSourceApi<NgsildQuery, NgsildSourceOpt
       if (!sq.startsWith("\"") && !sq.startsWith("'")) {
         sq = "\"" + sq + "\"";
       }
-      endpoint = JsUtils.appendQueryParam(endpoint, "scopeQ=" + sq)
+      endpoint = JsUtils.appendQueryParam(endpoint, "scopeQ=" + encodeURIComponent(sq))
     }
     const isVersionRequest: boolean = endpoint?.startsWith("/version");
     const baseUrl = isVersionRequest ? this.baseUrl.replace("/ngsi-ld/v1", "") : this.baseUrl;

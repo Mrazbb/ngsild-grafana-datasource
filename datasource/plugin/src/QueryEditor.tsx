@@ -259,7 +259,7 @@ export class QueryEditor extends PureComponent<Props, QueryState> {
       if (this.state?.attributes?.length! > 0)
         {return this.state.attributes!.map(QueryEditor.toOption).sort();}
       if (this.state?.attributesByEntityId) {
-        return [...new Set(Object.values(this.state.attributesByEntityId).flatMap(arr => arr))].map(QueryEditor.toOption).sort();
+        return[...new Set(Object.values(this.state.attributesByEntityId).reduce((acc, val) => acc.concat(val), [] as string[]))].map(QueryEditor.toOption).sort();
       }
     }
     if (entityId && this.state?.attributesByEntityId && entityId in this.state.attributesByEntityId)
@@ -268,7 +268,7 @@ export class QueryEditor extends PureComponent<Props, QueryState> {
       const types: EntityType[]|undefined = 
         entityType ? this.state?.types?.filter(type => type.typeName === entityType) : undefined;
       if (types)
-        {return [... new Set(types.flatMap((x) => x.attributeNames))].map(QueryEditor.toOption).sort();}
+        {return[... new Set(types.reduce((acc, x) => acc.concat(x.attributeNames), [] as string[]))].map(QueryEditor.toOption).sort();}
     }
     return (this.state?.attributes || []).map(QueryEditor.toOption).sort();
   }
